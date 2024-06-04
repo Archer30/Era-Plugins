@@ -71,12 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>D:\Games\HoMM 3 ERA Archer\Mods\Testing Tools\EraPlugins\</OutDir>
-    <TargetExt>.dll</TargetExt>
+    <OutDir>D:\Games\HoMM 3 ERA Archer\Mods\Game Enhancement Mod\eraplugins</OutDir>
+    <TargetExt>.era</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>D:\Games\HoMM 3 ERA Archer\Mods\Testing Tools\EraPlugins\</OutDir>
-    <TargetExt>.dll</TargetExt>
+    <OutDir>D:\Games\HoMM 3 ERA Archer\Mods\Game Enhancement Mod\eraplugins</OutDir>
+    <TargetExt>.era</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

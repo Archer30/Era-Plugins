@@ -72,6 +72,35 @@ int __stdcall AICalculateMapPosWeight(HiHook* h, const H3Hero* hero, const DWORD
 }
 
 
+// Prevent War Machines/stunned units to retaliate
+// First Aid Tents and Ammo Carts don't have frame to attack - now they can't
+// External Blind/Stone/Paralyze effect don't stop the attacked unit to retaliate - not any more
+_LHF_(OnBattleStackRetaliates) {
+    // Check the monId directly from the offset 0x34 from esi
+    int monId = *(int*)(c->esi + 0x34);
+
+    // Check if monId is 147 or 148
+    if (monId == 147 || monId == 148) {
+        // Set the return address to skip the original procedure
+        c->return_address = 0x441B85;
+        return NO_EXEC_DEFAULT;  // Do not execute the original code
+    }
+
+    // Check the values at offsets 0x290, 0x2B0, and 0x2C0 from esi
+    int blindDuration = *(int*)(c->esi + 0x290);
+    int stoneDuration = *(int*)(c->esi + 0x2B0);
+    int paralyzeDuration = *(int*)(c->esi + 0x2C0);
+     
+    if (blindDuration > 0 || stoneDuration > 0 || paralyzeDuration > 0) {
+        // Set the return address to skip the original procedure
+        c->return_address = 0x441B85;
+        return NO_EXEC_DEFAULT;  // Do not execute the original code
+    }
+
+    return EXEC_DEFAULT;  // Execute the original code
+}
+
+
 // Function to install hooks
 void InstallHooks() {
     // Write the hook at the specified address
@@ -82,6 +111,9 @@ void InstallHooks() {
     _PI->WriteHiHook(0x44A950, SPLICE_, EXTENDED_, THISCALL_, Army_Get_AI_Value);
     _PI->WriteHiHook(0x4E5BD0, SPLICE_, EXTENDED_, THISCALL_, Hero_GetSumOfPrimarySkills);
     // _PI->WriteHiHook(0x528520, FASTCALL_, AICalculateMapPosWeight);
+
+    // Prevent War Machines/stunned units to retaliate
+    _PI->WriteLoHook(0x441B25, OnBattleStackRetaliates);
 }
 
 // DLL entry point
