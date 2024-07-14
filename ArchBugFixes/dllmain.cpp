@@ -97,6 +97,34 @@ _LHF_(OnBattleStackRetaliates) {
 }
 
 
+// Prevent combo art pieces becoming the artifacts for Seer Huts
+_LHF_(RMG_AtQuestArtifactListCounter)
+{
+    const int artId = c->eax;
+    if (artId >= 0 && P_ArtifactSetup[artId].IsPartOfCombo())
+    {
+        // jump to next art in the loop
+        c->return_address = 0x54B9D1;
+        return  NO_EXEC_DEFAULT;
+    }
+
+    return EXEC_DEFAULT;
+}
+_LHF_(RMG_AtQuestArtifactListSelectRandom)
+{
+    const int artId = c->eax;
+    if (artId >= 0 && P_ArtifactSetup[artId].IsPartOfCombo())
+    {
+        // jump to next art in the loop
+        c->return_address = 0x54BA32;
+        return NO_EXEC_DEFAULT;
+
+    }
+
+    return EXEC_DEFAULT;
+}
+
+
 // Function to install hooks
 void InstallCustomHooksAndWriteBytes() {
     // Write the hook at the specified address
@@ -110,6 +138,10 @@ void InstallCustomHooksAndWriteBytes() {
 
     // Prevent War Machines/stunned units to retaliate
     _PI->WriteLoHook(0x441B25, OnBattleStackRetaliates);
+    
+    // Prevent combo art pieces becoming the artifacts for Seer Huts
+    _PI->WriteLoHook(0x54B9C0, RMG_AtQuestArtifactListCounter);
+    _PI->WriteLoHook(0x54BA1B, RMG_AtQuestArtifactListSelectRandom);
 }
 
 // DLL entry point
