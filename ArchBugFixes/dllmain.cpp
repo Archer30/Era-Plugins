@@ -142,6 +142,9 @@ void InstallCustomHooksAndWriteBytes() {
     // Prevent combo art pieces becoming the artifacts for Seer Huts
     _PI->WriteLoHook(0x54B9C0, RMG_AtQuestArtifactListCounter);
     _PI->WriteLoHook(0x54BA1B, RMG_AtQuestArtifactListSelectRandom);
+
+    // Fix missing background when battle on the sea with no boat
+    _PI->WriteByte(0x464304, 0x23);
 }
 
 // DLL entry point
