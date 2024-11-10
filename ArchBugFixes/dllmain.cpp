@@ -3,7 +3,7 @@
 Patcher* globalPatcher;
 PatcherInstance* _PI;
 
-// Prevent reviving Demons when the stacks quantity is more than 19
+// Prevent reviving Demons when the stacks quantity is already 20
 _LHF_(OnCheckIfPossibleToPitLordSummon) {
 
     if (P_CombatManager->heroMonCount[IntAt(c->ebp + 0x8)]>=20)
@@ -124,6 +124,17 @@ _LHF_(RMG_AtQuestArtifactListSelectRandom)
     return EXEC_DEFAULT;
 }
 
+// Fix pressing F to cast not working for Faerie Dragon when the hero cannot cast
+_LHF_(OnSpellChosen) {
+    if (IntAt(c->ebp + 0xc) == 1) // 0 for hero spell, 1 for monsters'
+    {
+        c->return_address = 0x59EF9F;  // Correctly set the return address
+        return NO_EXEC_DEFAULT;  // Do not execute the original code
+    }
+
+    return EXEC_DEFAULT;  // Execute the original code
+}
+
 
 // Function to install hooks
 void InstallCustomHooksAndWriteBytes() {
@@ -142,6 +153,9 @@ void InstallCustomHooksAndWriteBytes() {
     // Prevent combo art pieces becoming the artifacts for Seer Huts
     _PI->WriteLoHook(0x54B9C0, RMG_AtQuestArtifactListCounter);
     _PI->WriteLoHook(0x54BA1B, RMG_AtQuestArtifactListSelectRandom);
+
+    // Fix pressing F to cast not working for Faerie Dragon when the hero cannot cast
+    _PI->WriteLoHook(0x59EF91, OnSpellChosen);
 }
 
 // DLL entry point
