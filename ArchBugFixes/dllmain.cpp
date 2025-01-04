@@ -136,6 +136,20 @@ _LHF_(OnSpellChosen) {
 }
 
 
+// Restrain Armour damage reduction at 96% before level 868
+double __stdcall OnGetArmourPower(HiHook* h, H3Hero* hero)
+{
+    double result = THISCALL_1(float, h->GetDefaultFunc(), hero);
+
+    if (result <= 0.04 && hero->level < 868)
+    {
+        result = 0.04;
+    }
+
+    return result;
+}
+
+
 // Function to install hooks
 void InstallCustomHooksAndWriteBytes() {
     // Write the hook at the specified address
@@ -156,6 +170,9 @@ void InstallCustomHooksAndWriteBytes() {
 
     // Fix pressing F to cast not working for Faerie Dragon when the hero cannot cast
     _PI->WriteLoHook(0x59EF91, OnSpellChosen);
+
+    // Restrain Armour damage reduction at 96% before level 868
+    _PI->WriteHiHook(0x04E4580, THISCALL_, OnGetArmourPower);
 }
 
 // DLL entry point
