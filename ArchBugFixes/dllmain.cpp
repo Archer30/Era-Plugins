@@ -124,8 +124,10 @@ _LHF_(RMG_AtQuestArtifactListSelectRandom)
     return EXEC_DEFAULT;
 }
 
+
 // Fix pressing F to cast not working for Faerie Dragon when the hero cannot cast
-_LHF_(OnSpellChosen) {
+_LHF_(OnSpellChosen)
+{
     if (IntAt(c->ebp + 0xc) == 1) // 0 for hero spell, 1 for monsters'
     {
         c->return_address = 0x59EF9F;  // Correctly set the return address
@@ -147,6 +149,27 @@ double __stdcall OnGetArmourPower(HiHook* h, H3Hero* hero)
     }
 
     return result;
+}
+
+
+// Fix incorrect damage hint display when a stack is affected by Forgetfulness
+_LHF_(OnGetAttackDamageHint)
+{
+    // Check if it is shooting
+    if (IntAt(c->ebp + 0xc) > 0)
+    {
+        // Cast esi to H3CombatCreature and check if it is valid
+        if (auto stack = reinterpret_cast<H3CombatCreature*>(c->esi))
+        {
+            // Verify the duration for Forgetfulness and if the quantity of stack is greater than 1
+            if (stack->activeSpellDuration[eSpell::FORGETFULNESS] > 0 && c->eax > 1)
+            {
+                c->eax /= 2; // Halve the value at eax
+            }
+        }
+    }
+
+    return EXEC_DEFAULT; // Execute the original code by default
 }
 
 
@@ -173,6 +196,9 @@ void InstallCustomHooksAndWriteBytes() {
 
     // Restrain Armour damage reduction at 96% before level 868
     _PI->WriteHiHook(0x04E4580, THISCALL_, OnGetArmourPower);
+
+    // Fix incorrect damage hint display when a stack is affected by Forgetfulness
+    _PI->WriteLoHook(0x492F78, OnGetAttackDamageHint);
 }
 
 // DLL entry point
