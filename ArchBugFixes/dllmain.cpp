@@ -173,6 +173,19 @@ _LHF_(OnGetAttackDamageHint)
 }
 
 
+// Fix possible to retaliate when the attacking stack is killed
+_LHF_(OnRetaliate)
+{
+    if (IntAt(c->edi + 0x4c) <= 0)
+    {
+        c->return_address = 0x441C01;  // Correctly set the return address
+        return NO_EXEC_DEFAULT;  // Do not execute the original code   
+    }
+
+    return EXEC_DEFAULT;
+}
+
+
 // Function to install hooks
 void InstallCustomHooksAndWriteBytes() {
     // Write the hook at the specified address
@@ -199,6 +212,9 @@ void InstallCustomHooksAndWriteBytes() {
 
     // Fix incorrect damage hint display when a stack is affected by Forgetfulness
     _PI->WriteLoHook(0x492F78, OnGetAttackDamageHint);
+
+    // Fix possible to retaliate when the attacking stack is killed
+    _PI->WriteLoHook(0x441B25, OnRetaliate);
 }
 
 // DLL entry point
