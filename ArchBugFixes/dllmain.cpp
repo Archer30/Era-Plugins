@@ -71,26 +71,33 @@ int __stdcall AICalculateMapPosWeight(HiHook* h, const H3Hero* hero, const DWORD
     return static_cast<int>(result);
 }
 
-
-// Prevent War Machines/stunned units to retaliate
-// First Aid Tents and Ammo Carts don't have frame to attack - now they can't
+// Fix unreasonable retaliation events
+// Prevent possible to retaliate when the attacking stack is killed, prevent War Machines/stunned units to retaliate
 // External Blind/Stone/Paralyze effects don't stop the attacked unit to retaliate - not any more
-_LHF_(OnBattleStackRetaliates) {
-    // Check the monId directly from the offset 0x34 from esi
-    if (auto combatStack = reinterpret_cast<H3CombatMonster*>(c->esi))
+_LHF_(OnRetaliate) {
+    // Check if the attacker is still alive
+    if (auto atkStack = reinterpret_cast<H3CombatMonster*>(c->edi))
     {
-        if (combatStack->type == eCreature::FIRST_AID_TENT
-            || combatStack->type == eCreature::AMMO_CART
-            || combatStack->activeSpellDuration[eSpell::BLIND]
-            || combatStack->activeSpellDuration[eSpell::STONE]
-            || combatStack->activeSpellDuration[eSpell::PARALYZE]
+        if (atkStack->numberAlive <= 0)
+        {
+            c->return_address = 0x441C01;  // Jump to the end of attack function if the attacker is killed
+            return NO_EXEC_DEFAULT;  // Do not execute the original code   
+        }
+    }
+
+    // Get the defender's stack structure and check its creature type, spell status
+    if (auto defStack = reinterpret_cast<H3CombatMonster*>(c->esi))
+    {
+        if (defStack->type == eCreature::FIRST_AID_TENT
+            || defStack->type == eCreature::AMMO_CART
+            || defStack->activeSpellDuration[eSpell::BLIND]
+            || defStack->activeSpellDuration[eSpell::STONE]
+            || defStack->activeSpellDuration[eSpell::PARALYZE]
             )
         {
-
-            c->return_address = 0x441B85;
+            c->return_address = 0x441B85; // Jump to the end of retaliation process if the defender cannot retaliate
             return NO_EXEC_DEFAULT;  // Do not execute the original code
         }
-
     }
 
     return EXEC_DEFAULT;  // Execute the original code
@@ -173,19 +180,6 @@ _LHF_(OnGetAttackDamageHint)
 }
 
 
-// Fix possible to retaliate when the attacking stack is killed
-_LHF_(OnRetaliate)
-{
-    if (IntAt(c->edi + 0x4c) <= 0)
-    {
-        c->return_address = 0x441C01;  // Correctly set the return address
-        return NO_EXEC_DEFAULT;  // Do not execute the original code   
-    }
-
-    return EXEC_DEFAULT;
-}
-
-
 // Function to install hooks
 void InstallCustomHooksAndWriteBytes() {
     // Write the hook at the specified address
@@ -196,9 +190,6 @@ void InstallCustomHooksAndWriteBytes() {
     _PI->WriteHiHook(0x44A950, SPLICE_, EXTENDED_, THISCALL_, Army_Get_AI_Value);
     _PI->WriteHiHook(0x4E5BD0, SPLICE_, EXTENDED_, THISCALL_, Hero_GetSumOfPrimarySkills);
     // _PI->WriteHiHook(0x528520, FASTCALL_, AICalculateMapPosWeight);
-
-    // Prevent War Machines/stunned units to retaliate
-    _PI->WriteLoHook(0x441B25, OnBattleStackRetaliates);
     
     // Prevent combo art pieces becoming the artifacts for Seer Huts
     _PI->WriteLoHook(0x54B9C0, RMG_AtQuestArtifactListCounter);
@@ -213,8 +204,17 @@ void InstallCustomHooksAndWriteBytes() {
     // Fix incorrect damage hint display when a stack is affected by Forgetfulness
     _PI->WriteLoHook(0x492F78, OnGetAttackDamageHint);
 
-    // Fix possible to retaliate when the attacking stack is killed
+    // Fix unreasonable retaliation events
     _PI->WriteLoHook(0x441B25, OnRetaliate);
+
+    // Improve the interactoin of creature flags and stack exp
+    // Originally, setting 0 as the value of a flag ability result in canceling that ability when the rank doesn't meet the requirement
+    // This code ignores it
+    _PI->WriteByte(0x71BF08, 0x30);
+
+    // Fix the incorrect message shown when attempting to capture a mine that has guards but no owner
+    // The message wrongly states the guards are Troglodytes, even though they are not
+    _PI->WriteByte(0x4A36D4, 0xEB);
 }
 
 // DLL entry point
