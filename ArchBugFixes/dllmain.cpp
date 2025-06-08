@@ -88,8 +88,7 @@ _LHF_(OnRetaliate) {
     // Get the defender's stack structure and check its creature type, spell status
     if (auto defStack = reinterpret_cast<H3CombatMonster*>(c->esi))
     {
-        if (defStack->type == eCreature::FIRST_AID_TENT
-            || defStack->type == eCreature::AMMO_CART
+        if ((defStack->info.siegeWeapon) != 0
             || defStack->activeSpellDuration[eSpell::BLIND]
             || defStack->activeSpellDuration[eSpell::STONE]
             || defStack->activeSpellDuration[eSpell::PARALYZE]
@@ -215,6 +214,9 @@ void InstallCustomHooksAndWriteBytes() {
     // Fix the incorrect message shown when attempting to capture a mine that has guards but no owner
     // The message wrongly states the guards are Troglodytes, even though they are not
     _PI->WriteByte(0x4A36D4, 0xEB);
+
+    // Remove the message when successfully recruiting level 1 creatures from their dwellings - thanks to SadnessPower
+    _PI->WriteWord(0x4A19F2, 0x19F);
 }
 
 // DLL entry point
