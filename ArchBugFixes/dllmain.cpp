@@ -216,7 +216,7 @@ void InstallCustomHooksAndWriteBytes() {
     _PI->WriteByte(0x4A36D4, 0xEB);
 
     // Remove the message when successfully recruiting level 1 creatures from their dwellings - thanks to SadnessPower
-    _PI->WriteWord(0x4A19F2, 0x19F);
+    _PI->WriteHexPatch(0x04A1ACC, "8B45 F0 C700 00000000 E9 BB000000 9090");
 }
 
 // DLL entry point
